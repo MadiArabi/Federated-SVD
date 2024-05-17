@@ -3,7 +3,8 @@
 ## Description
 
 This repository includes the code for replicating results from "A Federated Data Fusion-Based Prognostic Model
-for Applications with Multi-Stream Incomplete Signals" by Madi Arabi and Xiaolei Fang. 
+for Applications with Multi-Stream Incomplete Signals" by Madi Arabi and Xiaolei Fang 
+https://doi.org/10.48550/arXiv.2311.07474. 
 Codes can be used for general purpose of fedearted time to failure (TTF) prediction with multiple users. Federated learning
 
 Industrial prognostic aims to predict the failure time of machines by analyzing their degradation signals. This is crucial for maintaining the reliability and efficiency of industrial operations. Our project proposes a federated learning approach that allows multiple organizations to collaboratively train a prognostic model without sharing their data, thus preserving data privacy. This federated prognostic model uses multi-stream degradation signals from multiple sensors to improve prediction accuracy. By employing multivariate functional principal component analysis (MFPCA) for data fusion and (log)-location-scale (LLS) regression for TTF prediction, our model effectively handles high-dimensional and incomplete data, which is common in real-world applications.
