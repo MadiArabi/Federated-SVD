@@ -39,6 +39,19 @@ pip install numpy numba pandas scikit-learn
 
 The code snippets are performed on simulated data using "Multi-sensor prognostics modeling for applications with highly incomplete signals.". For any other application, the input data can be replaced. 
 
+### Simulation Studies
+
+| Package   | Version |
+|-----------|---------|
+| FD.py     | Fedrated model for simulation study in section 4 |
+| NFD.py     | Non-federated model for both benchmarks for simulation study in section 4 |
+| Full.py    | Full Federated model for simulation study in section 5.1  |
+| Stragg.py   | Federated Model with presence of Straggler Effect for simulation study in section 5.1 |
+| Federated.py      | Federated model for simulation study in section 5.2 for large-scale application |
+| Non-Federated.py      | Non-Federated model (Benchmark I) for simulation study in section 5.2 for large-scale application |
+| Users.py      | Non-Federated model (Benchmark II) for simulation study in section 5.2 for large-scale applicationn |
+| time.py      | Simulation Study in section 5.3 |
+
 ## License
 
 This project is licensed under the MIT License
