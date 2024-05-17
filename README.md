@@ -33,7 +33,6 @@ The proposed method enables organizations to use their isolated data to jointly 
 
 To install the required packages, run:
 
-```bash
 pip install numpy numba pandas scikit-learn
 
 ## Usage
