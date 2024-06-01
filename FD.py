@@ -6,86 +6,9 @@ from numba import jit
 import matplotlib.pyplot as plt
 import math
 import time
-######### data preperation:
-start = time.time()
-print(start)
-np.random.seed(5022)
-m= 120 # number of total observations
-p=150
-y = []
-x = []
-D= 2
-sigma = 20
+import data_generation
 
-
-########################### Data generation
-
-
-func = lambda c,t: -c/(math.log(t))
-inter = []  
-for i in range(m):
-    x.append([])
-    c= np.random.normal(1,0.25)
-    epsilon= np.random.normal(0,0.025)
-    #y.append(math.exp((-c/D)+epsilon))
-    y.append(math.exp((-c/D)))
-    for j in range(1,p+1):
-        interval = j*0.006
-        if interval <y[i]:
-            x[i].append(func(c,interval))
-        else:
-             x[i].append(0)
-summ = 0             
-for i in x:
-    for j in i:
-        if j!=0:
-            summ = summ+ j
-          
-sigmaP = math.sqrt(summ)/sigma*500
-X=np.array(x)
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-for i in x:
-    for j in range(len(i)):
-        if i[j]:
-            i[j] = i[j]+ np.random.normal(0,0.2)
-            
-
-X=np.array(x)
-Y=np.array(y)
-
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-# adding missing values
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-            
-All = int((150*100 -missing1)*0.3+ missing1)
-missung_want = All/(100*150)   
-'''
-missingindices = np.random.choice(150*120, size=int(120*150*0.7), replace=False) # missing level
-X=X.ravel()
-X[missingindices] = 0
-X= np.reshape(X,(120,150))
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-
-missing_is = missing1/(100*150)
-'''
-
-
+X, Y = data_generation.generate_data(missing_level =0.7)
 LM = LinearRegression()
 
 @jit(nopython=True)
@@ -292,15 +215,10 @@ for randomness in range(15):
                 ##################Modeling: 
                 model = LM.fit(PCscores, np.log(tray[0:71]))
                 predictions=model.predict(PCscorestst)
-                abs_errors = np.abs(np.exp(predictions) - tsty[0:nd]) / np.abs(tsty[0:nd])
-    
-                if index == 0:
-                    all_errors = abs_errors.reshape(nd, 1)
-                else:
-                    all_errors = np.concatenate((all_errors, abs_errors.reshape(nd, 1)), axis=1)
+                abs_errors = np.mean(np.abs(np.exp(predictions) - tsty) / np.abs(tsty))
+                Matrixerror[(k, rank)] = Matrixerror.get((k, rank), 0) + abs_errors
 
-            ErrorSum=all_errors.sum().sum()
-            Matrixerror.update({(k,rank): ErrorSum})
+                
             
     ################### Final  Training Data#################################    
       
@@ -354,17 +272,11 @@ for randomness in range(15):
     Utilda, _, _ = np.linalg.svd(Btilda, full_matrices=True)
     PCscores = (Utilda.T)@Btilda
     PCscores = (PCscores[0:optimalrow,:]).T
-    
-   
-    
-  
-        ######################################### Final Test sata#############
-    ###############Missing elements
+
     n1 = 30
     n2 = 30
     n3 = 30
     nd=90
-    #d=300 # number of features in time intervals
     
     b1=weight_matrix(0,n1,xtest,u,d,n)
     
@@ -383,21 +295,14 @@ for randomness in range(15):
     PCscorestst3 = (Utilda.T)@b3
     PCscorestst = np.concatenate((PCscorestst1,PCscorestst2,PCscorestst3), axis=1)
     PCscorestst= (PCscorestst[0:optimalrow,:]).T
-    
-    
-  
+
     ##################Modeling: 
     model = LM.fit(PCscores, np.log(y))
     prediction2 = model.predict(PCscorestst)
-    
     for i in range(0,nd):
         prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])       
-    
-    
     abs_errors = pd.DataFrame(prediction2)
-    #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159.csv', encoding='utf-8', index=False, mode='a')
-    #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159users.csv', encoding='utf-8', index=False, mode='a')
-
+   
 end = time.time()
 total_time = end-start
 
