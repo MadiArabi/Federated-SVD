@@ -119,11 +119,11 @@ for randomness in range(15):
                 Bbar = np.mean(b_train, axis=1, keepdims=True)
                 Btilda = b_train - Bbar
                 Utilda = np.linalg.svd(Btilda, full_matrices=True)[0]
-                PCscores = Utilda.T @ Btilda[:k, :].T
+                PCscores = (Utilda.T @ Btilda)[:k, :].T
 
                 b_test = weight_matrix(user_test, u, d)
                 b_test -= Bbar
-                PCscorestst = Utilda.T @ b_test[:k, :].T
+                PCscorestst = (Utilda.T @ b_test)[:k, :].T
 
                 model = LM.fit(PCscores, np.log(tray))
                 predictions = model.predict(PCscorestst)
@@ -150,18 +150,15 @@ for randomness in range(15):
     Bbar = np.mean(b_final, axis=1, keepdims=True)
     Btilda = b_final - Bbar
     Utilda = np.linalg.svd(Btilda, full_matrices=True)[0]
-    PCscores = Utilda.T @ Btilda[:optimalrow, :].T
+    PCscores = (Utilda.T @ Btilda)[:optimalrow, :].T
 
     b_test_final = weight_matrix(xtest, u, d)
     b_test_final -= Bbar
-    PCscorestst_final = Utilda.T @ b_test_final[:optimalrow, :].T
+    PCscorestst_final = (Utilda.T @ b_test_final)[:optimalrow, :].T
 
     model = LM.fit(PCscores, np.log(Y))
     prediction2 = model.predict(PCscorestst_final)
     errors = np.abs(np.exp(prediction2) - ytest) / np.abs(ytest)
-
-    abs_errors = pd.DataFrame(errors)
-    abs_errors.to_csv('NFD30159.csv', encoding='utf-8', index=False, mode='a')
 
 end = time.time()
 total_time = end - start
