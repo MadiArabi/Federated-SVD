@@ -7,85 +7,15 @@ import matplotlib.pyplot as plt
 import math
 import time
 from timeit import default_timer as timer
+import data_generation
 ######### data preperation:
 start = time.time()
-start = timer()
 np.random.seed(2020)
-p=150
-y = []
-x = []
-D= 2
-sigma = 20
+
+LM = LinearRegression()
 n_users =5 # number of users
 user_numbers=[np.random.choice(60,1)[0]+11 for i in range(n_users)] #observatons per user
 m = sum(user_numbers)+30 # number of total observations from all users+ test data
-########################### Data generation
-
-
-func = lambda c,t: -c/(math.log(t))
-inter = []  
-for i in range(m):
-    x.append([])
-    c= np.random.normal(1,0.25)
-    epsilon= np.random.normal(0,0.025)
-    #y.append(math.exp((-c/D)+epsilon))
-    y.append(math.exp((-c/D)))
-    for j in range(1,p+1):
-        interval = j*0.006
-        if interval <y[i]:
-            x[i].append(func(c,interval))
-        else:
-             x[i].append(0)
-summ = 0             
-for i in x:
-    for j in i:
-        if j!=0:
-            summ = summ+ j
-          
-sigmaP = math.sqrt(summ)/sigma*500
-X=np.array(x)
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-for i in x:
-    for j in range(len(i)):
-        if i[j]:
-            i[j] = i[j]+ np.random.normal(0,0.2)
-X=np.array(x)
-Y=np.array(y)
-
-for i in X:
-    
-    plt.plot(xx,i)
-# adding missing values
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-            
-All = int((150*100 -missing1)*0.3+ missing1)
-missung_want = All/(100*150)   
-'''
-missingindices = np.random.choice(150*m, size=int(m*150*0.3), replace=False) # missing level
-X=X.ravel()
-X[missingindices] = 0
-X= np.reshape(X,(m,150))
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-
-missing_is = missing1/(100*150)
-'''
-
-
-LM = LinearRegression()
-
 @jit(nopython=True)
 def basis_construction(user,u,d,n):
     n_observations =user.shape[1]
@@ -100,7 +30,7 @@ def basis_construction(user,u,d,n):
         u = np.ascontiguousarray(u)
         w = np.ascontiguousarray(w)
         p=u@w
-        vtilda = v
+        vtilda = v.copy()
         vtilda[vtilda == 0] = p[vtilda == 0,0]
         r=vtilda-p[:,0]
         mat=np.concatenate((np.eye(d,d), w), axis =1)
@@ -154,7 +84,6 @@ def weight_matrix(user,u,d,n):
     
 
 D=[5,10,20,30,40,50]
-#D=[5]
 xtest = X[m-30:m,:].T
 ytest = Y[m-30:m]
 fold_users =[index for index, value in enumerate(user_numbers) if value >= 5]
@@ -187,8 +116,7 @@ for randomness in range(15):
             kf = KFold(n_splits=5) 
             train=[]
             test=[]
-            
-            
+
             for i in fold_users:
                 train.append([])
                 test.append([])
@@ -197,11 +125,8 @@ for randomness in range(15):
                    test[-1].append(test_index)
             
             for index in range(0,5):
-                
-                
-                
+
                 All_usersx = []
-                
                 All_usersx_test = []
                 All_usersy = []
                 All_usersy_test = []
@@ -225,17 +150,7 @@ for randomness in range(15):
                 for i in range(40): # 10 cycles
                     data = np.array(All_usersx).T
                     u = basis_construction(data,u,d,n)
-                #print(k,rank,index)
-                        
-                        
-                 
-        
-                
                 b =weight_matrix(All_usersx.T,u,d,n)
-                    
-                
-                
-
                 B=np.array(b)
                 Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
                 Btilda = B-Bbar
@@ -251,19 +166,14 @@ for randomness in range(15):
                 b_test = b_test-Bbar
                 PCscorestst = (Utilda.T)@b_test
                 PCscorestst= (PCscorestst[0:k,:]).T
-                #print('pc_test',k,rank,index)
                 ##################Modeling: 
                 model = LM.fit(PCscores, np.log(All_usersy))
                 predictions=model.predict(PCscorestst)
                 abs_errors = np.abs(np.exp(predictions) - All_usersy_test) / np.abs(All_usersy_test)
                 nd = len(All_usersy_test)
-                #print('ml',k,rank,index)
                 if index == 0:
                     all_errors = abs_errors.reshape(nd, 1)
                 else:
-                    #print(all_errors.shape[0])
-                    #print(len(abs_errors))
-                    
                     while all_errors.shape[0]!=len(abs_errors):
                         
                         if len(abs_errors)<all_errors.shape[0]:
@@ -271,9 +181,8 @@ for randomness in range(15):
                         else:
                             abs_errors= abs_errors[:-1]
                     nd = len(abs_errors)
-                        
                     all_errors = np.concatenate((all_errors, abs_errors.reshape(nd, 1)), axis=1)
-                #print('end',k,rank,index)
+            
             ErrorSum=all_errors.sum().sum()
             Matrixerror.update({(k,rank): ErrorSum})
             
@@ -291,24 +200,17 @@ for randomness in range(15):
         All_usersy.extend(users_y[j])
         All_usersx_test.extend(users[j])
         All_usersx.extend(users[j])
-    
-            
+
     All_usersx_test = np.array(All_usersx_test) 
     All_usersx = np.array(All_usersx)
     
     H = np.random.randn(n, d)
     uh, sh, vh = np.linalg.svd(H, full_matrices=False)
     u = uh @ vh
-    
-    resnorm1 =1000
-    diff = 1
     for i in range(1000): # 100 cycles
         
         u = basis_construction(np.array(All_usersx).T,u,d,n)
-            
-            
-     
-   
+    
     b =weight_matrix(All_usersx.T,u,d,n)
     
     
@@ -338,10 +240,6 @@ for randomness in range(15):
     for i in range(0,nd):
         prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])       
     
-    
-    abs_errors = pd.DataFrame(prediction2)
-    abs_errors.to_csv(r'G:\My Drive\research1\simultaed\FD_sim250130full1.4.csv', encoding='utf-8', index=False, mode='a')
-    #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159users.csv', encoding='utf-8', index=False, mode='a')
 
 end = time.time()
 end = timer()
