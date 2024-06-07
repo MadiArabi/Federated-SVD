@@ -6,98 +6,15 @@ from numba import jit
 import matplotlib.pyplot as plt
 import math
 import time
+from data_generation import generate_data
 ######### data preperation:
 
 start_time = time.time()
 np.random.seed(5022)
-m= 120 # number of total observations
-p=150
-y = []
-x = []
-D= 2
-sigma = 20
+
 n_users =150 # number of users
 user_numbers=[np.random.choice(20,1)[0]+1 for i in range(n_users)] #observatons per user
 m = sum(user_numbers)+30 # number of total observations from all users+ test data
-
-'''
-List =[10,20,50,100,150,300,500,800,1000]
-for n_users in List:
-    start_time = time.time()
-    print(n_users,'start',start_time)
-    np.random.seed(5022)
-    m= 120 # number of total observations
-    p=150
-    y = []
-    x = []
-    D= 2
-    sigma = 20
-    #n_users =50 # number of users
-    user_numbers=[np.random.choice(20,1)[0]+1 for i in range(n_users)] #observatons per user
-    user_numbers[0]=20
-    m = sum(user_numbers)+30 # number of total observations from all users+ test data
-'''
-func = lambda c,t: -c/(math.log(t))
-inter = []  
-for i in range(m):
-    x.append([])
-    c= np.random.normal(1,0.25)
-    epsilon= np.random.normal(0,0.025)
-    #y.append(math.exp((-c/D)+epsilon))
-    y.append(math.exp((-c/D)))
-    for j in range(1,p+1):
-        interval = j*0.006
-        if interval <y[i]:
-            x[i].append(func(c,interval))
-        else:
-             x[i].append(0)
-summ = 0             
-for i in x:
-    for j in i:
-        if j!=0:
-            summ = summ+ j
-          
-sigmaP = math.sqrt(summ)/sigma*500
-X=np.array(x)
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-for i in x:
-    for j in range(len(i)):
-        if i[j]:
-            i[j] = i[j]+ np.random.normal(0,0.2)
-X=np.array(x)
-Y=np.array(y)
-
-for i in X:
-    
-    plt.plot(xx,i)
-# adding missing values
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-            
-All = int((150*100 -missing1)*0.3+ missing1)
-missung_want = All/(100*150)   
-'''
-missingindices = np.random.choice(150*m, size=int(m*150*0.5), replace=False) # missing level
-X=X.ravel()
-X[missingindices] = 0
-X= np.reshape(X,(m,150))
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-
-missing_is = missing1/(100*150)
-'''
-
 
 LM = LinearRegression()
 
@@ -166,17 +83,16 @@ def weight_matrix(user,u,d,n):
 
     return W
     
-    
+X , Y =generate_data(m=m,missing_level=0.3)
 
 D=[5,10,20,30,40,50,60]
-#D=[5]
 xtest = X[m-30:m,:].T
 ytest = Y[m-30:m]
 fold_users =[index for index, value in enumerate(user_numbers)]
 
 X=X[0:m-30,:]
 Y = Y[0:m-30]
-#shuffle
+
 arr = np.arange(m-30)
 for randomness in range(10):
     np.random.shuffle(arr)
@@ -230,17 +146,10 @@ for randomness in range(10):
                 u = uh @ vh
                
                 
-                for i in range(20): # 10 cycles
-                    
-                    #u = basis_construction(users[fold_users[j]][train[j][index]].T,u,d,n)
+                for i in range(20):
                     u = basis_construction(np.array(All_usersx).T,u,d,n)
-                        
-                        
-                 
+
                 b =weight_matrix(np.array(All_usersx).T,u,d,n)
-                
-                
-                #B = np.concatenate((b1,b2,b3),axis =1)
                 B=np.array(b)
                 Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
                 Btilda = B-Bbar
@@ -293,13 +202,8 @@ for randomness in range(10):
     diff = 1
     for _ in range(100): # 100 cycles
         u = basis_construction(np.array(users).T,u,d,n)
-            
-            
-     
     b = weight_matrix(np.array(users).T,u,d,n)
-        
-    #All_usersy=users_y[train[index]])
-    
+      
     B=np.array(b)
     Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
     Btilda = B-Bbar
@@ -309,28 +213,18 @@ for randomness in range(10):
     
     ######################################### Test data##################
     b_test =weight_matrix(xtest,u,d,n)
-
-        
     b_test=np.array(b_test)
     b_test = b_test-Bbar
     PCscorestst = (Utilda.T)@b_test
     PCscorestst= (PCscorestst[0:optimalrow,:]).T
     
-  
     ##################Modeling: 
    
     model = LM.fit(PCscores, np.log(users_y))
-    prediction2 = model.predict(PCscorestst)
+    prediction = model.predict(PCscorestst)
     nd=30
     for i in range(0,nd):
-        prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])       
-    
-    
-    abs_errors = pd.DataFrame(prediction2)
-    abs_errors.to_csv(r'G:\My Drive\research1\simultaed\NFD_sim15010.csv', encoding='utf-8', index=False, mode='a')
-    #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159users.csv', encoding='utf-8', index=False, mode='a')
+        prediction[i]=abs(np.exp(prediction[i])-ytest[i%30])/abs(ytest[i%30])       
 
     end = time.time()
     total_time = (end-start_time)
-    
-    print(total_time)
