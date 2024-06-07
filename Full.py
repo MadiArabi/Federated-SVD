@@ -82,7 +82,7 @@ def weight_matrix(user,u,d,n):
     return W
     
     
-
+# X, Y = Gnerate data using the fucntion for all users
 D=[5,10,20,30,40,50]
 xtest = X[m-30:m,:].T
 ytest = Y[m-30:m]
