@@ -9,78 +9,10 @@ import time
 ######### data preperation:
 start = time.time()
 np.random.seed(5022)
-m= 120 # number of total observations
-p=150
-y = []
-x = []
-D= 2
-sigma = 20
 n_users =150 # number of users
 user_numbers=[np.random.choice(20,1)[0]+1 for i in range(n_users)] #observatons per user
 m = sum(user_numbers)+30 # number of total observations from all users+ test data
 ########################### Data generation
-
-
-func = lambda c,t: -c/(math.log(t))
-inter = []  
-for i in range(m):
-    x.append([])
-    c= np.random.normal(1,0.25)
-    epsilon= np.random.normal(0,0.025)
-    #y.append(math.exp((-c/D)+epsilon))
-    y.append(math.exp((-c/D)))
-    for j in range(1,p+1):
-        interval = j*0.006
-        if interval <y[i]:
-            x[i].append(func(c,interval))
-        else:
-             x[i].append(0)
-summ = 0             
-for i in x:
-    for j in i:
-        if j!=0:
-            summ = summ+ j
-          
-sigmaP = math.sqrt(summ)/sigma*500
-X=np.array(x)
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-for i in x:
-    for j in range(len(i)):
-        if i[j]:
-            i[j] = i[j]+ np.random.normal(0,0.2)
-X=np.array(x)
-Y=np.array(y)
-
-for i in X:
-    
-    plt.plot(xx,i)
-# adding missing values
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-            
-All = int((150*100 -missing1)*0.3+ missing1)
-missung_want = All/(100*150)   
-'''
-missingindices = np.random.choice(150*m, size=int(m*150*0.7), replace=False) # missing level
-X=X.ravel()
-X[missingindices] = 0
-X= np.reshape(X,(m,150))
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-
-missing_is = missing1/(100*150)
-'''
 
 
 LM = LinearRegression()
@@ -156,9 +88,7 @@ def weight_matrix(user,u,d,n):
     return W
     
     
-
-#D=[5,10,20,30,40,50,60]
-#D=[5,10,20,30]
+X , Y =generate_data(m=m,missing_level=0.3)
 D=[5,10,15,20]
 xtest = X[m-30:m,:].T
 ytest = Y[m-30:m]
@@ -170,7 +100,6 @@ arr = np.arange(m-30)
 for USER in range(n_users):
     print('User',USER)
     if user_numbers[USER]>1:
-        print('User',USER)
         all_errors=0
         for randomness in range(10):
             np.random.shuffle(arr)
@@ -280,9 +209,6 @@ for USER in range(n_users):
             for _ in range(100): # 100 cycles
                 u = basis_construction(np.array(All_users).T,u,d,n)
                     
-                    
-        
-            
             b= output =weight_matrix(np.array( All_users).T,u,d,n)
     
             B=np.array(b)
@@ -316,9 +242,9 @@ for USER in range(n_users):
                 group=2
             elif 15<=user_numbers[USER]<=20:
                 group=3
-            #print('size',len(abs_errors))
-            abs_errors.to_csv(r'G:\My Drive\research1\simultaed\FD3_sim170150'+str(group)+'.csv', encoding='utf-8', index=False, mode='a')
-                #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159users.csv', encoding='utf-8', index=False, mode='a')
+        
+            abs_errors.to_csv(path +str(group)+'.csv', encoding='utf-8', index=False, mode='a')
+                )
         
     end = time.time()
     total_time = (end-start)/60
