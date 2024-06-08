@@ -6,6 +6,7 @@ from numba import jit
 import matplotlib.pyplot as plt
 import math
 import time
+from data_generation import generate_data
 ######### data preperation:
 start = time.time()
 np.random.seed(5022)
