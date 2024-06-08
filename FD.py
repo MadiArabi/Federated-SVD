@@ -24,7 +24,7 @@ def basis_construction(n1,n2,user,u,d,n):
         u = np.ascontiguousarray(u)
         w = np.ascontiguousarray(w)
         p=u@w
-        vtilda = v
+        vtilda = v.copy()
         vtilda[vtilda == 0] = p[vtilda == 0,0]
         r=vtilda-p[:,0]
         mat=np.concatenate((np.eye(d,d), w), axis =1)
@@ -70,18 +70,16 @@ def weight_matrix(n1,n2,user,u,d,n):
         uOmega= np.reshape(uOmega, (size1,d))
         vOmega= np.reshape(vOmega, (size1,1))
         w= np.linalg.inv((uOmega.T)@uOmega)@(uOmega.T)@vOmega
-    
         W[:,col-n1] = w[:,0]
-
     return W
     
     
 
-D=[5,10,20,30,40]
+D = [5,10,20,30,40]
 xtest = X[90:120,:].T
 ytest = Y[90:120]
 
-X=X[0:90,:]
+X = X[0:90,:]
 Y = Y[0:90]
 #shuffle
 arr = np.arange(90)
@@ -89,52 +87,32 @@ for randomness in range(15):
     np.random.shuffle(arr)
     x = X[arr,:]
     y = Y[arr]
-    
     user1=np.array(x[0:54])
     user2=np.array(x[54:81])
     user3 = np.array(x[81:90])    
     Y1=np.array(y[0:54])
     Y2=np.array(y[54:81])
     Y3=np.array(y[81:90])
-    
-    
-    x= np.concatenate((user1,user2,user3), axis=0).T
-    y=np.concatenate((Y1,Y2,Y3))
-
     Matrixerror = {}
-    
     for rank in D:
-        rank=int(rank)
-        if rank==5:
-            K=[2,4,5]
-        else:
-            K=np.linspace(rank/5,rank,5)
+        K=[2,4,5] if rank==5 else K=np.linspace(rank//5,rank,5, dtype = int)
         for k in K:
-            k=int(k)
             kf = KFold(n_splits=5) 
-            
-            train1=[]
-            test1=[]
-            train2=[]
-            test2=[]
-            train3=[]
-            test3=[]
-           
-            for train_index, test_index in kf.split(user1):
-               train1.append(train_index)
-               test1.append(test_index)
-            for train_index, test_index in kf.split(user2):
-               train2.append(train_index)
-               test2.append(test_index)
-            for train_index, test_index in kf.split(user3):
-               train3.append(train_index)
-               test3.append(test_index)
+            train_test_splits = [
+    list(kf.split(user)) for user in [user1, user2, user3]
+]
                
             for index in range(0,5):
-                tray=np.concatenate((Y1[train1[index].astype(int)],Y2[train2[index].astype(int)],Y3[train3[index].astype(int)]),axis=0)
-                tsty=np.concatenate((Y1[(test1[index]).astype(int)],Y2[(test2[index]).astype(int)],Y3[(test3[index]).astype(int)]),axis=0)
-                user=np.concatenate((user1[(train1[index]).astype(int),:],user2[(train2[index]).astype(int),:],user3[(train3[index]).astype(int),:]),axis=0).T
-                usertst=np.concatenate((user1[(test1[index]).astype(int),:],user2[(test2[index]).astype(int),:],user3[(test3[index]).astype(int),:]),axis=0).T
+                train_indices = [split[index][0] for split in train_test_splits]
+                test_indices = [split[index][1] for split in train_test_splits]
+
+                # Concatenate training and testing data
+                tray = np.concatenate([Y1[train_indices[0]], Y2[train_indices[1]], Y3[train_indices[2]]])
+                tsty = np.concatenate([Y1[test_indices[0]], Y2[test_indices[1]], Y3[test_indices[2]]])
+                
+                user_train = np.concatenate([user1[train_indices[0]], user2[train_indices[1]], user3[train_indices[2]]], axis=0).T
+                user_test = np.concatenate([user1[test_indices[0]], user2[test_indices[1]], user3[test_indices[2]]], axis=0).T
+
                 n1 = 43
                 n2 = 21
                 n3 = 7
@@ -145,32 +123,12 @@ for randomness in range(15):
                 uh, _, vh = np.linalg.svd(H, full_matrices=False)
                 u = uh @ vh
                
-                
-                for i in range(20): # 10 cycles
+                ### user side
+                for i in range(20): 
                     u = basis_construction(0,n1,user,u,d,n)
-                    '''
-                    H = np.random.rand(d, d)
-                    uh, _, vh = np.linalg.svd(H, full_matrices=False)
-                    W = uh@vh
-                    u = u@W
-                    '''
                     u = basis_construction(n1,n1+n2,user,u,d,n)
-                    '''
-                    H = np.random.rand(d, d)
-                    uh, _, vh = np.linalg.svd(H, full_matrices=False)
-                    W = uh@vh
-                    u = u@W
-                    '''
                     u = basis_construction(n1+n2,n1+n2+n3,user,u,d,n)
-                    '''
-                    H = np.random.rand(d, d)
-                    uh, _, vh = np.linalg.svd(H, full_matrices=False)
-                    W = uh@vh
-                    u = u@W
-                    '''
-                 
-                    
-                    
+              
                 ###########user1:
                 b1=weight_matrix(0,n1,user,u,d,n)
                 
@@ -179,7 +137,7 @@ for randomness in range(15):
                     
                 ###########user3:
                 b3=weight_matrix(n1+n2,n1+n2+n3,user,u,d,n)
-                
+                ### server side
                 B = np.concatenate((b1,b2,b3),axis =1)
                 Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
                 Btilda = B-Bbar
@@ -192,8 +150,8 @@ for randomness in range(15):
                 n1 = 9
                 n2 = 5
                 n3 = 2
-                nd = 16 #Total test
-                
+                nd = n1+n2+n3 #Total test
+                ### user side
                 #####user1
                 b1=weight_matrix(0,n1,usertst,u,d,n)
               
@@ -210,6 +168,7 @@ for randomness in range(15):
                 PCscorestst1 = (Utilda.T)@b1
                 PCscorestst2 = (Utilda.T)@b2
                 PCscorestst3 = (Utilda.T)@b3
+                ### server side for our compariosn purpose
                 PCscorestst = np.concatenate((PCscorestst1,PCscorestst2,PCscorestst3), axis=1)
                 PCscorestst= (PCscorestst[0:k,:]).T
                 ##################Modeling: 
@@ -222,50 +181,38 @@ for randomness in range(15):
             
     ################### Final  Training Data#################################    
       
-    argmax = min(Matrixerror,key=Matrixerror.get)
+    optimalrow, d = min(Matrixerror,key=Matrixerror.get)
     n1 = 54
     n2 = 27
     n3 = 9
-    optimalrow= argmax[0]
-    d=argmax[1] # number of features in time intervals
-    
     
     H = np.random.randn(n, d)
     uh, sh, vh = np.linalg.svd(H, full_matrices=False)
     u = uh @ vh
     
-    resnorm1 =1000
+    resnorm_prev =1000 # a big number
     diff = 1
     for _ in range(100): # 10 cycles
         resnorm =0
-        u = basis_construction(0,n1,x,u,d,n)
-        
-        resnorm = resnorm_clac(0,n1,x,u,d,n,resnorm)
-        u = basis_construction(n1,n1+n2,x,u,d,n)
-        
-        resnorm = resnorm_clac(n1,n1+n2,x,u,d,n,resnorm)
-        u = basis_construction(n1+n2,n1+n2+n3,x,u,d,n)
-        '''
-        H = np.random.rand(d, d)
-        uh, _, vh = np.linalg.svd(H, full_matrices=False)
-        W = uh@vh
-        u = u@W
-        '''
-        resnorm = resnorm_clac(n1+n2,n1+n2+n3,x,u,d,n,resnorm)
+        u = basis_construction(0,n1,x.T,u,d,n)
+        resnorm = resnorm_clac(0,n1,x.T,u,d,n,resnorm)
 
-        diff =resnorm1 -resnorm
-        resnorm1 = resnorm
-        #print(resnorm1)
+        u = basis_construction(n1,n1+n2,x,u,d,n)
+        resnorm = resnorm_clac(n1,n1+n2,x.T,u,d,n,resnorm)
+
+        u = basis_construction(n1+n2,n1+n2+n3,x.T,u,d,n)
+        resnorm = resnorm_clac(n1+n2,n1+n2+n3,x.T,u,d,n,resnorm)
+
+        diff =resnorm_prev -resnorm
+        resnorm_prev = resnorm
         
     ###########user1:
-    b1=weight_matrix(0,n1,x,u,d,n)
-    #print(b1.shape)
+    b1=weight_matrix(0,n1,x.T,u,d,n)
     ###########user2:
-    b2=weight_matrix(n1,n1+n2,x,u,d,n)
-    #print(b2.shape)
+    b2=weight_matrix(n1,n1+n2,x.T,u,d,n)
     ###########user3:
-    b3=weight_matrix(n1+n2,n1+n2+n3,x,u,d,n)
-    
+    b3=weight_matrix(n1+n2,n1+n2+n3,x.T,u,d,n)
+    ##### Server side
     B = np.concatenate((b1,b2,b3),axis =1)
     Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
     Btilda = B-Bbar
@@ -276,13 +223,11 @@ for randomness in range(15):
     n1 = 30
     n2 = 30
     n3 = 30
-    nd=90
-    
+    nd=n1+n2+n3
+    ###user side
     b1=weight_matrix(0,n1,xtest,u,d,n)
-    
     ###########user2:
     b2=weight_matrix(0,n2,xtest,u,d,n)
-        
     ###########user3:
     b3=weight_matrix(0,n3,xtest,u,d,n)
 
@@ -293,6 +238,7 @@ for randomness in range(15):
     PCscorestst1 = (Utilda.T)@b1
     PCscorestst2 = (Utilda.T)@b2
     PCscorestst3 = (Utilda.T)@b3
+    #### server side
     PCscorestst = np.concatenate((PCscorestst1,PCscorestst2,PCscorestst3), axis=1)
     PCscorestst= (PCscorestst[0:optimalrow,:]).T
 
@@ -301,7 +247,6 @@ for randomness in range(15):
     prediction2 = model.predict(PCscorestst)
     for i in range(0,nd):
         prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])       
-    abs_errors = pd.DataFrame(prediction2)
    
 end = time.time()
 total_time = end-start
