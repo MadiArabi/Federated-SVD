@@ -3,7 +3,7 @@
 ## Description
 
 This repository includes the code for replicating results from "A Federated Data Fusion-Based Prognostic Model
-for Applications with Multi-Stream Incomplete Signals" by Madi Arabi and Xiaolei Fang 
+for Applications with Multi-Stream Incomplete Signals" by Madi Arabi and Xiaolei Fang https://www.tandfonline.com/doi/full/10.1080/24725854.2024.2360619 / 
 https://doi.org/10.48550/arXiv.2311.07474. 
 Codes can be used for general purpose of fedearted time to failure (TTF) prediction with multiple users.
 
