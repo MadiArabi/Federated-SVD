@@ -109,12 +109,8 @@ for randomness in range(10):
     users_y = np.array(users_y)
     Matrixerror = {}
     for rank in D:
-        #print(D)
         rank=int(rank)
-        if rank==5:
-            K=[2,4,5]
-        else:
-            K=np.linspace(rank/5,rank,5)
+        K=[2,4,5] if rank==5 else K=np.linspace(rank/5,rank,5)
         for k in K:
             k=int(k)
             kf = KFold(n_splits=5) 
