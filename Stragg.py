@@ -6,81 +6,14 @@ from numba import jit
 import matplotlib.pyplot as plt
 import math
 import time
+from data_generation import generate_data
 ######### data preperation:
 start = time.time()
 np.random.seed(2020)
-p=150
-y = []
-x = []
-D= 2
-sigma = 20
 n_users =5 # number of users
 user_numbers=[np.random.choice(60,1)[0]+11 for i in range(n_users)] #observatons per user
 m = sum(user_numbers)+30 # number of total observations from all users+ test data
 ########################### Data generation
-
-
-func = lambda c,t: -c/(math.log(t))
-inter = []  
-for i in range(m):
-    x.append([])
-    c= np.random.normal(1,0.25)
-    epsilon= np.random.normal(0,0.025)
-    #y.append(math.exp((-c/D)+epsilon))
-    y.append(math.exp((-c/D)))
-    for j in range(1,p+1):
-        interval = j*0.006
-        if interval <y[i]:
-            x[i].append(func(c,interval))
-        else:
-             x[i].append(0)
-summ = 0             
-for i in x:
-    for j in i:
-        if j!=0:
-            summ = summ+ j
-          
-sigmaP = math.sqrt(summ)/sigma*500
-X=np.array(x)
-xx = np.linspace(0,150,150)
-for i in X:
-    
-    plt.plot(xx,i)
-for i in x:
-    for j in range(len(i)):
-        if i[j]:
-            i[j] = i[j]+ np.random.normal(0,0.2)
-X=np.array(x)
-Y=np.array(y)
-
-for i in X:
-    
-    plt.plot(xx,i)
-# adding missing values
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-            
-All = int((150*100 -missing1)*0.3+ missing1)
-missung_want = All/(100*150)   
-'''
-missingindices = np.random.choice(150*m, size=int(m*150*0.3), replace=False) # missing level
-X=X.ravel()
-X[missingindices] = 0
-X= np.reshape(X,(m,150))
-'''
-missing1 = 0
-for i in X:
-    for j in i:
-        if j==0:
-            missing1 +=1
-
-missing_is = missing1/(100*150)
-'''
-
 
 LM = LinearRegression()
 
@@ -149,10 +82,8 @@ def weight_matrix(user,u,d,n):
 
     return W
     
-    
-
+X , Y =generate_data(m=m,missing_level=0.3)
 D=[5,10,20,30,40,50]
-#D=[5]
 xtest = X[m-30:m,:].T
 ytest = Y[m-30:m]
 fold_users =[index for index, value in enumerate(user_numbers) if value >= 5]
@@ -176,16 +107,12 @@ for randomness in range(15):
     Matrixerror = {}
     for rank in D:
         rank=int(rank)
-        if rank==5:
-            K=[2,4,5]
-        else:
-            K=np.linspace(rank/5,rank,5)
+        K=[2,4,5] if rank==5 else K=np.linspace(rank/5,rank,5)
         for k in K:
             k=int(k)
             kf = KFold(n_splits=5) 
             train=[]
             test=[]
-            
             
             for i in fold_users:
                 train.append([])
@@ -228,15 +155,8 @@ for randomness in range(15):
                     #data = np.array(All_usersx_missing[i]).T
                     #u = basis_construction(data,u,d,n)
                     u = basis_construction(All_usersx.T,u,d,n)
-                        
-                        
-                 
-        
-                
+
                 b =weight_matrix(All_usersx.T,u,d,n)
-                    
-                
-                
 
                 B=np.array(b)
                 Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
@@ -315,8 +235,6 @@ for randomness in range(15):
     
     B=np.array(b)
     Bbar =np.reshape(np.mean(B, axis = 1), (d,1))
-    #b =weight_matrix(All_usersx.T,u,d,n)
-    #B=np.array(b)
     Btilda = B-Bbar
     Utilda, _, _ = np.linalg.svd(Btilda, full_matrices=True)
     PCscores = (Utilda.T)@Btilda
@@ -338,12 +256,7 @@ for randomness in range(15):
     prediction2 = model.predict(PCscorestst)
     nd=30
     for i in range(0,nd):
-        prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])       
-    
-    
-    abs_errors = pd.DataFrame(prediction2)
-    abs_errors.to_csv(r'G:\My Drive\research1\simultaed\FD7_sim230130stragg1.4.csv', encoding='utf-8', index=False, mode='a')
-    #abs_errors.to_csv(r'G:\My Drive\research1\simultaed\Federated70159users.csv', encoding='utf-8', index=False, mode='a')
+        prediction2[i]=abs(np.exp(prediction2[i])-ytest[i%30])/abs(ytest[i%30])      
 
 end = time.time()
 total_time = (end-start)/60
